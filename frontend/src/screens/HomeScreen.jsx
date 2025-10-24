@@ -28,36 +28,12 @@ import {
 
 const salesSection = [
   { to: "/facturacion", icon: <LucideBaggageClaim />, label: "Venta Detal", isPrimary: true },
-  { to: "/enconstruccion", icon: <LucideTruck />, label: "Venta Mayor" },
   { to: "/verpedidos", icon: <LucideListTodo />, label: "Lista de Ventas" },
-  {
-    to: "/enconstruccion",
-    icon: <LucidePersonStanding />,
-    label: "Revendedores",
-    isExternal: true,
-  },
-];
-
-const inventorySection = [
-  { to: "/verproductos", icon: <LucideBoxes />, label: "Productos" },
-  { to: "/enconstruccion", icon: <LucideFilePlus />, label: "Crear Producto" },
-  { to: "/enconstruccion", icon: <LucideFolderSearch />, label: "Búsqueda" },
-  { to: "/enconstruccion", icon: <LucideFileInput />, label: "Reposiciones" },
-  { to: "/enconstruccion", icon: <LucidePenTool />, label: "Ajustes" },
-];
-
-const reportsSection = [
-  { to: "/enconstruccion", icon: <LucideLayoutDashboard />, label: "Dashboard" },
-  { to: "/enconstruccion", icon: <LucideClipboardCheck />, label: "Cuadre de Caja" },
-  { to: "/enconstruccion", icon: <LucideCalculator />, label: "Gastos" }, // TODO: Implementar
   { to: "/enconstruccion", icon: <LucideUsers />, label: "Clientes" },
-  { to: "/enconstruccion", icon: <LucideStar />, label: "Top 20" },
-  {
-    to: "/enconstruccion",
-    children: <img className="cashea-img-home" src={casheaimg} alt="cashea" />,
-    label: "Reporte Cashea",
-  },
+  { to: "/verproductos", icon: <LucideBoxes />, label: "Productos" },
+  { to: "/enconstruccion", icon: <LucideLayoutDashboard />, label: "Dashboard" },
 ];
+
 
 
 // --- Componentes Reutilizables ---
@@ -117,8 +93,6 @@ function HomeScreen() {
       <CambioMarquee />
       <div className="dashboard-container">
         <DashboardSection title="Ventas y Pedidos" cards={salesSection} />
-        <DashboardSection title="Inventario" cards={inventorySection} />
-        <DashboardSection title="Reportes y Administración" cards={reportsSection} />
 
       </div>
     </>
