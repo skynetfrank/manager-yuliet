@@ -68,7 +68,7 @@ export default function ProductListScreen() {
         return (
           <div className="flx pad-0 column">
             <h3>{codigo}</h3>
-            <div className="flx gap-1 bg-grey pad-05">
+            {userInfo.email === "frank.uah@gmail.com" ? (<div className="flx gap-1 bg-grey pad-05">
               <ToolTip text="Editar">
                 <LucideEdit size={20} onClick={() => editHandler(_id)} />
               </ToolTip>
@@ -78,7 +78,8 @@ export default function ProductListScreen() {
               <ToolTip text="Eliminar">
                 <LucideTrash2 size={20} onClick={() => deleteHandler(_id, codigo)} disabled={isDeleting} />
               </ToolTip>
-            </div>
+            </div>) : ("")}
+
           </div>
         );
       },
@@ -109,7 +110,6 @@ export default function ProductListScreen() {
         return unidades;
       },
     },
-    { header: "Categoria", accessorKey: "categoria" },
     { header: "Marca", accessorKey: "marca" },
     { header: "Modelo", accessorKey: "modelo" },
     { header: "Color", accessorKey: "color" },

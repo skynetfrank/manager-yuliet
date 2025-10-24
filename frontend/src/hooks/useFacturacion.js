@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { useGetCambioQuery, useCreateOrderMutation } from "../api/ordersApi";
 import { useGetVendedoresQuery } from "../api/usersApi";
+import { useLazyGetClienteByRifQuery } from "../api/clientesApi";
 
 function subtractHours(date, hours) {
   date.setHours(date.getHours() - hours);
@@ -16,7 +17,7 @@ export const useFacturacion = () => {
   const [cambioDia, setCambioDia] = useState(0);
   const [rif, setRif] = useState("");
   const [clienteInfo, setClienteInfo] = useState(null);
-  const [vendedor, setVendedor] = useState("");
+  const [vendedor, setVendedor] = useState("68fbc1e95cd3e9dbbc679344");
   const [condicion, setCondicion] = useState("Contado");
   const [ordenItems, setOrdenItems] = useState([]);
   const [metodosPago, setMetodosPago] = useState([]);
@@ -39,6 +40,7 @@ export const useFacturacion = () => {
   const { data: cambioData, isError: isCambioError } = useGetCambioQuery({});
   const { data: vendedores } = useGetVendedoresQuery();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [triggerGetCliente] = useLazyGetClienteByRifQuery();
 
   // --- VALORES CALCULADOS (MEMOIZED) ---
   const subtotal = useMemo(() => ordenItems.reduce((acc, item) => acc + item.precio * item.qty, 0), [ordenItems]);
@@ -166,6 +168,19 @@ export const useFacturacion = () => {
     };
     checkAndSetRate();
   }, [totalOrden, cambioDia]);
+
+  useEffect(() => {
+    const setDefaultClient = async () => {
+      const defaultRif = "V99999999";
+      const { data: defaultClient, isSuccess } = await triggerGetCliente(defaultRif);
+      if (isSuccess && defaultClient) {
+        setClienteInfo(defaultClient);
+        setRif(defaultRif);
+      }
+    };
+
+    setDefaultClient();
+  }, [triggerGetCliente]);
 
   // --- VALORES Y FUNCIONES EXPUESTAS ---
   return {

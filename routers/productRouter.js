@@ -10,7 +10,7 @@ productRouter.get(
   "/",
   expressAsyncHandler(async (req, res) => {
     const productos = await Producto.find(
-      {},
+      { },
       {
         _id: 1,
         codigo: 1,
