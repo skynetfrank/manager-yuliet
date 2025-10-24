@@ -12,12 +12,14 @@ const ProductViewer = ({ isOpen, onClose }) => {
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     const lowercasedFilter = searchTerm.toLowerCase();
-    return products.filter(
-      (product) =>
-        product.codigo.toLowerCase().includes(lowercasedFilter) ||
-        product.marca.toLowerCase().includes(lowercasedFilter) ||
-        (product.categoria && product.categoria.toLowerCase().includes(lowercasedFilter))
-    );
+    return products
+      .filter((product) => product.existencia > 0) // <-- Primero filtramos por existencia
+      .filter(
+        (product) =>
+          product.codigo.toLowerCase().includes(lowercasedFilter) ||
+          product.marca.toLowerCase().includes(lowercasedFilter) ||
+          (product.categoria && product.categoria.toLowerCase().includes(lowercasedFilter))
+      );
   }, [products, searchTerm]);
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -51,7 +53,7 @@ const ProductViewer = ({ isOpen, onClose }) => {
     <div className="modal-backdrop">
       <div className="modal-content-viewer">
         <div className="modal-header">
-          <h2>Visor de Productos</h2>
+          <h2>Productos Disponibles</h2>
           <button onClick={onClose} className="close-button">
             <LucideX size={24} />
           </button>
