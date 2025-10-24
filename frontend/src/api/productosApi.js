@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Define a service using a base URL and expected endpoints
 export const productosApi = createApi({
-  reducerPath: "productApi",
+  reducerPath: "productosApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api",
     prepareHeaders: (headers, { getState }) => {
@@ -19,8 +19,12 @@ export const productosApi = createApi({
       query: () => "/productos",
       providesTags: ["Product"],
     }),
-    getProduct: builder.query({
-      query: (id) => `/productos/buscarporcodigo/${id}`,
+    getProductById: builder.query({
+      query: (id) => `/productos/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Product', id }],
+    }),
+    getProductByCode: builder.query({
+      query: (codigo) => `/productos/buscarporcodigo/${codigo}`,
     }),
     addProduct: builder.mutation({
       query: (newProduct) => ({
@@ -50,9 +54,10 @@ export const productosApi = createApi({
 
 export const {
   useGetProductsQuery,
-  useGetProductQuery,
+  useGetProductByIdQuery,
+  useGetProductByCodeQuery,
   useAddProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useLazyGetProductQuery,
+  useLazyGetProductByCodeQuery,
 } = productosApi;

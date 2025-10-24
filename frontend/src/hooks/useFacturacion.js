@@ -49,7 +49,7 @@ export const useFacturacion = () => {
     () => Math.max(0, subtotal - descuento + impuesto + Number(delivery)),
     [subtotal, descuento, impuesto, delivery]
   );
-  const totalPagado = useMemo(() => metodosPago.reduce((acc, pago) => acc + pago.monto, 0), [metodosPago]);
+  const totalPagado = useMemo(() => metodosPago.reduce((acc, pago) => acc + pago.montoUSD, 0), [metodosPago]);
 
   // --- FUNCIONES Y MANEJADORES ---
   const resetFormulario = () => {

@@ -389,8 +389,8 @@ function Facturacion() {
                       let montoDisplay;
 
                       if (esPagoEnBs) {
-                        const montoEnBs = pago.monto * cambioDia;
-                        montoDisplay = `Bs. ${montoEnBs.toLocaleString("es-VE", { minimumFractionDigits: 2 })}`;
+                        // El monto ya está en Bolívares, solo se formatea.
+                        montoDisplay = `Bs. ${pago.monto.toLocaleString("es-VE", { minimumFractionDigits: 2 })}`;
                       } else {
                         const montoEnDolares = pago.monto;
                         const equivalenteEnBs = montoEnDolares * cambioDia;
@@ -432,9 +432,8 @@ function Facturacion() {
       {/* --- SECCIÓN DE MEMO / NOTAS --- */}
       {totalOrden > 0 && (
         <div
-          className={`info-memo ${
-            (condicion === "Donacion" || condicion === "Intercambio") && !memo.trim() ? "alerta-sin-cliente" : ""
-          }`}
+          className={`info-memo ${(condicion === "Donacion" || condicion === "Intercambio") && !memo.trim() ? "alerta-sin-cliente" : ""
+            }`}
         >
           <h3>Memo / Notas</h3>
           <textarea
@@ -466,7 +465,7 @@ function Facturacion() {
         setShowNewClientModal={setShowNewClientModal}
         // Ya no necesitamos pasar las props de búsqueda de cliente al ModalsManager
         showClienteSearchModal={false} // Opcional: se puede dejar para no romper la interfaz de ModalsManager
-        setShowClientSearchModal={() => {}} // Opcional: se puede dejar para no romper la interfaz de ModalsManager
+        setShowClientSearchModal={() => { }} // Opcional: se puede dejar para no romper la interfaz de ModalsManager
         showProductSearchModal={showProductSearchModal}
         setShowProductSearchModal={setShowProductSearchModal}
         showMetodoPagoModal={showMetodoPagoModal}

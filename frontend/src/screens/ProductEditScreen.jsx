@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useGetProductQuery, useUpdateProductMutation } from "../api/productosApi";
+import { useGetProductByIdQuery, useUpdateProductMutation, productosApi } from "../api/productosApi";
 
 import {
   listaMarcas,
@@ -13,6 +13,7 @@ import {
 } from "../constants/listas";
 
 import Compressor from "compressorjs";
+import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import { LucideCheck, LucideFileImage, LucideUploadCloud, LucideLoader, LucideSave } from "lucide-react";
 
@@ -21,14 +22,25 @@ export default function ProductEditScreen(props) {
   const navigate = useNavigate();
   const { id } = params;
 
-  const { data: product, isLoading: isLoadingProduct, isError: isErrorProduct } = useGetProductQuery(id);
+  const { data: productData, isLoading: isLoadingProduct, isError: isErrorProduct } = useGetProductByIdQuery(id);
   const [
     updateProduct,
     { isLoading: isUpdating, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
   ] = useUpdateProductMutation();
 
-  // --- Estado unificado para el formulario del producto ---
-  const [productData, setProductData] = useState(null);
+  // --- Estado local para manejar el formulario ---
+  const [formData, setFormData] = useState({
+    codigo: "",
+    categoria: "CALZADO",
+    marca: "",
+    modelo: "",
+    color: "",
+    genero: "",
+    preciousd: "",
+    tipo: "",
+    tallas: {},
+  });
+  const dispatch = useDispatch();
 
   // --- Estados para la subida de imagen ---
   const [imageurl, setImageurl] = useState("");
@@ -49,27 +61,28 @@ export default function ProductEditScreen(props) {
 
   // --- Cálculo de existencia total ---
   const existencia = useMemo(
-    () => (productData ? Object.values(productData.tallas).reduce((acc, val) => acc + (Number(val) || 0), 0) : 0),
-    [productData]
+    () => (formData ? Object.values(formData.tallas || {}).reduce((acc, val) => acc + (Number(val) || 0), 0) : 0),
+    [formData]
   );
 
   useEffect(() => {
-    if (product) {
-      setProductData({
-        codigo: product.codigo || "",
-        categoria: product.categoria || "CALZADO",
-        marca: product.marca || "",
-        modelo: product.modelo || "",
-        color: product.color || "",
-        genero: product.genero || "",
-        preciousd: product.preciousd || "",
-        tipo: product.tipo || "",
-        tallas: product.tallas || {},
+    // Inicializa el estado del formulario cuando los datos del producto se cargan
+    if (productData) {
+      setFormData({
+        codigo: productData.codigo || "",
+        categoria: productData.categoria || "CALZADO",
+        marca: productData.marca || "",
+        modelo: productData.modelo || "",
+        color: productData.color || "",
+        genero: productData.genero || "",
+        preciousd: productData.preciousd || "",
+        tipo: productData.tipo || "",
+        tallas: productData.tallas || {},
       });
-      setImageurl(product.imageurl || "");
-      setLocalUri(product.imageurl || null);
+      setImageurl(productData.imageurl || ""); // Sincroniza la URL de la imagen
+      setLocalUri(productData.imageurl || null); // Muestra la imagen existente
     }
-  }, [product]);
+  }, [productData]);
 
   useEffect(() => {
     if (!image) {
@@ -127,10 +140,12 @@ export default function ProductEditScreen(props) {
     try {
       await updateProduct({
         _id: id,
-        ...productData,
+        ...formData,
         existencia,
         imageurl,
       }).unwrap();
+      // Limpiar la cache para forzar la recarga de datos en la lista de productos
+      dispatch(productosApi.util.invalidateTags(["Product"]));
     } catch (err) {
       console.error("Failed to update product:", err);
     }
@@ -138,29 +153,26 @@ export default function ProductEditScreen(props) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setProductData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTallaChange = (e) => {
     const { name, value } = e.target;
     const numericValue = value === "" ? 0 : Number(value);
-    setProductData((prev) => {
-      const newTallas = { ...prev.tallas, [name]: numericValue };
-      if (numericValue === 0) {
-        delete newTallas[name];
-      }
-      return { ...prev, tallas: newTallas };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      tallas: { ...prev.tallas, [name]: numericValue },
+    }));
   };
 
   if (isLoadingProduct) return <div className="loading">Cargando datos del producto...</div>;
   if (isErrorProduct) return <div className="error">Error al cargar la información del producto.</div>;
-  if (!productData) return null; // No renderizar nada hasta que los datos estén listos
+  if (!formData.codigo) return null; // No renderizar nada hasta que el formulario esté inicializado
 
   return (
     <>
       <div className="flx column pad-0 jcenter">
-        <h2 className="editar pad-05">EDITAR PRODUCTO {productData.codigo}</h2>
+        <h2 className="editar pad-05">EDITAR PRODUCTO {formData?.codigo}</h2>
         <form className="signin-form" onSubmit={submitHandler} style={{ maxWidth: "700px", gap: "1.5rem" }}>
           {/* --- Sección de Información Principal --- */}
           <div className="form-section w100p">
@@ -173,7 +185,7 @@ export default function ProductEditScreen(props) {
                   name="codigo"
                   required
                   placeholder="CODIGO"
-                  value={productData.codigo.toUpperCase()}
+                  value={formData.codigo.toUpperCase()}
                   onChange={handleInputChange}
                   disabled // El código no se debe editar
                 />
@@ -185,7 +197,7 @@ export default function ProductEditScreen(props) {
                   name="preciousd"
                   required
                   placeholder="Ej: 25.00"
-                  value={productData.preciousd}
+                  value={formData.preciousd}
                   onChange={handleInputChange}
                 />
               </div>
@@ -198,7 +210,7 @@ export default function ProductEditScreen(props) {
             <div className="form-row">
               <div className="form-group">
                 <label>Categoría</label>
-                <select name="categoria" value={productData.categoria} onChange={handleInputChange} required>
+                <select name="categoria" value={formData.categoria} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {listaCategorias.map((x) => (
                     <option key={x} value={x}>
@@ -209,7 +221,7 @@ export default function ProductEditScreen(props) {
               </div>
               <div className="form-group">
                 <label>Género</label>
-                <select name="genero" value={productData.genero} onChange={handleInputChange} required>
+                <select name="genero" value={formData.genero} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {listaGeneros.map((x) => (
                     <option key={x} value={x}>
@@ -222,7 +234,7 @@ export default function ProductEditScreen(props) {
             <div className="form-row">
               <div className="form-group">
                 <label>Marca</label>
-                <select name="marca" value={productData.marca} onChange={handleInputChange} required>
+                <select name="marca" value={formData.marca} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {sortedMarcas.map((x) => (
                     <option key={x} value={x}>
@@ -233,7 +245,7 @@ export default function ProductEditScreen(props) {
               </div>
               <div className="form-group">
                 <label>Modelo</label>
-                <select name="modelo" value={productData.modelo} onChange={handleInputChange} required>
+                <select name="modelo" value={formData.modelo} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {sortedModelos.map((x) => (
                     <option key={x} value={x}>
@@ -246,7 +258,7 @@ export default function ProductEditScreen(props) {
             <div className="form-row">
               <div className="form-group">
                 <label>Tipo</label>
-                <select name="tipo" value={productData.tipo} onChange={handleInputChange} required>
+                <select name="tipo" value={formData.tipo} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {sortedTipos.map((x) => (
                     <option key={x} value={x}>
@@ -257,7 +269,7 @@ export default function ProductEditScreen(props) {
               </div>
               <div className="form-group">
                 <label>Color</label>
-                <select name="color" value={productData.color} onChange={handleInputChange} required>
+                <select name="color" value={formData.color} onChange={handleInputChange} required>
                   <option value="">Seleccione...</option>
                   {sortedColores.map((x) => (
                     <option key={x} value={x}>
@@ -270,23 +282,23 @@ export default function ProductEditScreen(props) {
           </div>
 
           {/* --- Sección de Existencia por Talla --- */}
-          {productData.categoria === "CALZADO" && productData.genero && (
+          {(formData.categoria === "CALZADO" || formData.categoria === "TEXTILES") && formData.genero && (
             <div className="form-section w100p">
               <h3>Existencia por Talla ({existencia} unidades)</h3>
               <div className="flx jcenter wrap pad-0" style={{ gap: "0.5rem" }}>
                 {keys.map((talla) => {
-                  if (productData.categoria === "CALZADO") {
-                    if (productData.genero === "Dama" && (Number(talla) < 35 || Number(talla) > 40 || isNaN(talla)))
+                  if (formData.categoria === "CALZADO") {
+                    if (formData.genero === "Dama" && (Number(talla) < 35 || Number(talla) > 40 || isNaN(talla)))
                       return null;
-                    if (productData.genero === "Caballero" && (Number(talla) < 40 || isNaN(talla))) return null;
-                    if (productData.genero === "Niño" && (Number(talla) > 35 || isNaN(talla))) return null;
+                    if (formData.genero === "Caballero" && (Number(talla) < 40 || isNaN(talla))) return null;
+                    if (formData.genero === "Niño" && (Number(talla) > 35 || isNaN(talla))) return null;
                   }
                   return (
                     <div key={talla} className="edit-span-tallas">
                       <span>{talla}</span>
                       <input
                         type="number"
-                        value={productData.tallas[talla] || ""}
+                        value={formData.tallas[talla] || ""}
                         className="input-talla"
                         name={talla}
                         onChange={handleTallaChange}

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLazyGetProductQuery } from "../api/productosApi";
+import { useLazyGetProductByCodeQuery } from "../api/productosApi";
 import { LucideChevronDown, LucideFootprints, LucideLoader, LucideXSquare } from "lucide-react";
 
 const ProductSearch = ({ onProductFound, onCancel }) => {
-  const [triggerProductSearch, { data: products, isLoading, isError }] = useLazyGetProductQuery();
+  const [triggerProductSearch, { data: products, isLoading, isError }] = useLazyGetProductByCodeQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedProductId, setExpandedProductId] = useState(null);
   const [activeTalla, setActiveTalla] = useState("");
