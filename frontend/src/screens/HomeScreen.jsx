@@ -29,8 +29,7 @@ import {
 const salesSection = [
   { to: "/facturacion", icon: <LucideBaggageClaim />, label: "Venta Detal", isPrimary: true },
   { to: "/verpedidos", icon: <LucideListTodo />, label: "Lista de Ventas" },
-  { to: "/enconstruccion", icon: <LucideUsers />, label: "Clientes" },
-  { to: "/verproductos", icon: <LucideBoxes />, label: "Productos" },
+  { to: "/verproductos", icon: <LucideBoxes />, label: "Catalogo" },
   { to: "/enconstruccion", icon: <LucideLayoutDashboard />, label: "Dashboard" },
 ];
 

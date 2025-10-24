@@ -76,21 +76,6 @@ export default function MetodoPago({ onCancel, onSave, totalOrden, totalOrdenBs 
       return;
     }
 
-    // --- VALIDACIONES DE CAMPOS OBLIGATORIOS ---
-    if (necesitaReferencia && !referencia.trim()) {
-      const fieldName = metodo === "PAGOCASHEA" ? "Número de Orden" : "Referencia";
-      Swal.fire("Campo Requerido", `Por favor, ingrese el campo '${fieldName}'.`, "warning");
-      return;
-    }
-    if (necesitaBancoOrigen && !bancoOrigen) {
-      Swal.fire("Campo Requerido", "Por favor, seleccione un 'Banco Origen'.", "warning");
-      return;
-    }
-    if (necesitaBancoDestino && !bancoDestino) {
-      Swal.fire("Campo Requerido", "Por favor, seleccione un 'Banco Destino'.", "warning");
-      return;
-    }
-
     let nuevoPago;
     const montoNumerico = parseFloat(monto);
 
@@ -175,7 +160,7 @@ export default function MetodoPago({ onCancel, onSave, totalOrden, totalOrdenBs 
         <div className="form-section">
           <div className="form-row">
             <div className="form-group">
-              <label>Método de Pago</label>
+              <label htmlFor="metodo-select">Método de Pago</label>
               <select value={metodo} onChange={(e) => handleFieldChange("metodo", e.target.value)}>
                 <option value="">Seleccione un método...</option>
                 {metodosDisponibles.map((m) => {
@@ -189,7 +174,7 @@ export default function MetodoPago({ onCancel, onSave, totalOrden, totalOrdenBs 
                 })}
               </select>
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ flexGrow: 1 }}>
               <label>Monto ({simboloMoneda})</label>
               <div className="input-with-button">
                 <input
@@ -213,47 +198,6 @@ export default function MetodoPago({ onCancel, onSave, totalOrden, totalOrdenBs 
             </div>
           </div>
 
-          <div className="form-row">
-            {necesitaBancoOrigen && (
-              <div className="form-group">
-                <label>Banco Origen</label>
-                <select value={bancoOrigen} onChange={(e) => handleFieldChange("bancoOrigen", e.target.value)}>
-                  <option value="">Seleccione...</option>
-                  {bancosDisponibles.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {necesitaBancoDestino && (
-              <div className="form-group">
-                <label>Banco Destino</label>
-                <select value={bancoDestino} onChange={(e) => handleFieldChange("bancoDestino", e.target.value)}>
-                  <option value="">Seleccione...</option>
-                  {bancosDisponibles.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-          {necesitaReferencia && (
-            <div className="form-group">
-              <label>Referencia</label>
-              <input
-                type="text"
-                value={referencia}
-                onChange={(e) => handleFieldChange("referencia", e.target.value)}
-                maxLength={metodo === "PAGOCASHEA" ? "20" : "12"}
-                placeholder={metodo === "PAGOCASHEA" ? "Número de Orden Cashea" : ""}
-              />
-            </div>
-          )}
-
           <div className="form-group">
             <label>Memo (Opcional)</label>
             <input
@@ -274,7 +218,7 @@ export default function MetodoPago({ onCancel, onSave, totalOrden, totalOrdenBs 
                 <div key={index} className="payment-item">
                   <span>
                     {pago.tipo}: <strong>{pago.moneda} {pago.monto.toFixed(2)}</strong>
-                    {pago.referencia && ` (Ref: ${pago.referencia})`}
+                    {pago.referencia && pago.referencia !== "" && ` (Ref: ${pago.referencia})`}
                   </span>
                   <LucideTrash2 className="delete-item-icon" onClick={() => handleRemovePago(index)} />
                 </div>

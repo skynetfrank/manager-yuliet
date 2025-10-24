@@ -1,4 +1,4 @@
-import { HardHat } from "lucide-react";
+import { BadgeAlert, HardHat, ShieldAlert } from "lucide-react";
 import { Link } from "react-router";
 
 const underConstructionStyles = {
@@ -30,10 +30,10 @@ const underConstructionStyles = {
 export default function UnderConstruction() {
   return (
     <div style={underConstructionStyles.container}>
-      <HardHat size={64} color="#ffc107" />
-      <h1 style={underConstructionStyles.title}>Página en Construcción</h1>
+      <ShieldAlert size={64} color="#ffc107" />
+      <h1 style={underConstructionStyles.title}>Se Necesita Credenciales de Administrador </h1>
       <p style={underConstructionStyles.text}>
-        Estamos trabajando para tener esta sección lista lo antes posible.
+        Este Modulo solo es visible por Administradores de D'MODA.
         <br />
         Ofrecemos disculpas por las molestias.
       </p>

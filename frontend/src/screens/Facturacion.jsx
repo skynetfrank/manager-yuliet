@@ -120,7 +120,7 @@ function Facturacion() {
   const handleDeleteItem = (index, item) => {
     Swal.fire({
       title: "¿Estás seguro?",
-      text: `Se eliminará el producto ${item.codigo} (Talla ${item.talla}) de la orden.`,
+      text: `Se eliminará ${item.codigo} (Talla ${item.talla}) de la orden.`,
 
       icon: "warning",
       showCancelButton: true,
@@ -131,7 +131,7 @@ function Facturacion() {
     }).then((result) => {
       if (result.isConfirmed) {
         deleteItemFromOrder(index);
-        Swal.fire("Producto Eliminado!", "success");
+        Swal.fire("Producto Eliminado!");
       }
     });
   };
@@ -217,9 +217,7 @@ function Facturacion() {
         <details className="details-collapsible full-width">
           <summary className="details-summary">
             Vendedor{" "}
-            <Tooltip text="Asignar Vendedor">
-              <LucideUserSearch className="add-product-icon" onClick={() => setShowVendedorViewerModal(true)} />
-            </Tooltip>
+
           </summary>
           <div className="client-order-details">
             {selectedVendedor ? (
@@ -507,7 +505,7 @@ function Facturacion() {
         onClick={createOrderHandler}
         disabled={ordenItems.length === 0 || !clienteInfo || !vendedor || isCreatingOrder}
       >
-        Crear Orden
+        Crear Nota de Venta
       </button>
       {imagenAmpliadaUrl && (
         <div className="backdrop-imagen-ampliada" onClick={() => setImagenAmpliadaUrl(null)}>
