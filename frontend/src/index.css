@@ -5392,3 +5392,14 @@ button.modal-close-button {
 .clear-filters-btn:hover {
   background-color: #5a6268;
 }
+
+.sub-table th {
+  background-color: grey;
+  padding: 3px;
+  text-align: center;
+}
+
+.sub-table td {
+  padding: 3px;
+  text-align: center;
+}

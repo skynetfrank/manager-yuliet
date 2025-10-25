@@ -23,7 +23,7 @@ function ReporteCuadres() {
     return (
       <div style={{ padding: "10px 20px", background: "#f1f1f1" }}>
         <h4>Artículos Vendidos en el Día</h4>
-        <table style={{ width: "100%", fontSize: "1.2rem" }}>
+        <table className="sub-table" style={{ width: "100%", fontSize: "1.2rem" }}>
           <thead>
             <tr>
               <th style={{ textAlign: "left" }}>Producto</th>
@@ -56,17 +56,6 @@ function ReporteCuadres() {
   const columns = useMemo(
     () => [
       {
-        id: "expander",
-        header: () => null,
-        cell: ({ row }) => {
-          return row.getCanExpand() ? (
-            <button className="btn-icon-container" {...{ onClick: row.getToggleExpandedHandler() }}>
-              {row.getIsExpanded() ? <LucideChevronDown /> : <LucideChevronRight />}
-            </button>
-          ) : null;
-        },
-      },
-      {
         header: "Dia",
         accessorKey: "_id",
         cell: (info) => {
@@ -74,31 +63,32 @@ function ReporteCuadres() {
           return `${day}-${month}-${year}`;
         },
       },
+
+
       { header: "Ventas", accessorKey: "totalOrders" },
       {
         header: "Monto US$",
         accessorKey: "totalSales",
         cell: (info) => formatCurrency(info.getValue()),
       },
-
       {
-        header: "Acciones",
-        accessorKey: "_id",
+        id: "expander",
+        header: () => null,
         cell: ({ row }) => {
-          const { _id } = row.original;
-          return (
-            _id && (
-              <div className="flx pad-0">
-                <button
-                  className="btn-icon-container"
-                  onClick={() => navigate(`/cuadrediario?fecha=${_id}`)}>
-                  <LucideBadgeDollarSign />
-                </button>
-              </div>
-            )
-          );
+          return row.getCanExpand() ? (
+            <button
+              className="btn-icon-container flx"
+              style={{ gap: "0.5rem", border: "none", background: "transparent", cursor: "pointer" }}
+              {...{ onClick: row.getToggleExpandedHandler() }}
+            >
+              <span style={{ fontWeight: 500, fontSize: "1.2rem" }}>Detalle</span>
+              {row.getIsExpanded() ? <LucideChevronDown size={16} /> : <LucideChevronRight size={16} />}
+            </button>
+          ) : null;
         },
       },
+
+
     ],
     [navigate]
   );
