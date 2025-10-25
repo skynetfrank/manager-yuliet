@@ -22,6 +22,8 @@ import UnderConstruction from "./components/UnderConstruction.jsx";
 import OrderDetailScreen from "./screens/OrderDetailScreen.jsx";
 import OrderListScreen from "./screens/OrderListScreen.jsx";
 import ConteoRapido from "./screens/ConteoRapido.jsx";
+import ReporteCuadres from "./screens/ReporteCuadres.jsx";
+
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -35,6 +37,7 @@ const router = createBrowserRouter(
         <Route path="/admin-menu" element={<LinkTree />}></Route>
         <Route path="/profile" element={<ProfileScreen />}></Route>
         <Route path="/reporteclientes" element={<ReporteClientes />}></Route>
+        <Route path="/ventasdiarias" element={<ReporteCuadres />}></Route>
       </Route>
 
       <Route path="/product/:id/edit" element={<ProductEditScreen />}></Route>

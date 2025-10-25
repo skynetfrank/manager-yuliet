@@ -24,8 +24,18 @@ export const ordersApi = createApi({
     }),
     getOrder: builder.query({
       query: (id) => `/orders/${id}`,
+      providesTags: (result, error, id) => [{ type: "Order", id }],
     }),
-    invalidatesTags: ["Order"],
+    getCuadreDiario: builder.query({
+      query: (fecha) => ({
+        url: "/orders/cuadrediario",
+        params: { fecha },
+      }),
+    }),
+    getGroupedByDay: builder.query({
+      query: () => "/orders/groupedbyday",
+      providesTags: ["Order"],
+    }),
     createOrder: builder.mutation({
       query: (order) => ({
         url: "/orders",
@@ -51,4 +61,6 @@ export const {
   useDeleteOrderMutation,
   useGetCambioQuery,
   useCreateOrderMutation,
+  useLazyGetCuadreDiarioQuery,
+  useGetGroupedByDayQuery,
 } = ordersApi;

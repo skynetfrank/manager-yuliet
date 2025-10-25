@@ -1,3 +1,4 @@
+import React, { useState, Fragment } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -5,31 +6,45 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
+  getExpandedRowModel, // Importar el hook para expansión
 } from "@tanstack/react-table";
 
-import { useState } from "react";
 import ToolTip from "./ToolTip";
 
-function SimpleTable({ data, columns, filterInput, botonera, filterValue, filas }) {
+function SimpleTable({
+  data,
+  columns,
+  filterInput,
+  botonera,
+  filterValue,
+  filas,
+  renderSubComponent,
+  getRowCanExpand,
+}) {
   const [sorting, setSorting] = useState([]);
   const [filtering, setFiltering] = useState(filterValue);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: filas || 20 });
+  const [expanded, setExpanded] = useState({}); // Estado para controlar las filas expandidas
 
   const table = useReactTable({
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
       globalFilter: filtering,
       pagination,
+      expanded, // Pasar el estado de expansión a la tabla
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setFiltering,
     onPaginationChange: setPagination,
+    onExpandedChange: setExpanded, // Permite que la tabla actualice el estado
+    getRowCanExpand, // Usa la prop para determinar si una fila puede expandirse
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getExpandedRowModel: getExpandedRowModel(), // Habilita el modelo de expansión
   });
 
   const clearFilter = () => {
@@ -75,11 +90,19 @@ function SimpleTable({ data, columns, filterInput, botonera, filterValue, filas 
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell, inx) => (
-                <td key={inx}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-              ))}
-            </tr>
+            <Fragment key={row.id}>
+              <tr>
+                {row.getVisibleCells().map((cell, inx) => (
+                  <td key={inx}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                ))}
+              </tr>
+              {/* Renderiza el sub-componente si la fila está expandida */}
+              {row.getIsExpanded() && renderSubComponent && (
+                <tr>
+                  <td colSpan={row.getVisibleCells().length}>{renderSubComponent({ row })}</td>
+                </tr>
+              )}
+            </Fragment>
           ))}
         </tbody>
       </table>

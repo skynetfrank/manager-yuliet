@@ -39,7 +39,7 @@ body {
   padding: 1rem;
 }
 
-.home-link > span {
+.home-link>span {
   color: black;
   font-weight: bold;
 }
@@ -956,12 +956,12 @@ img.img-small {
   color: rgb(187, 187, 187);
 }
 
-.dash-info-image > svg {
+.dash-info-image>svg {
   font-size: 48px;
   color: #d8d8d8;
 }
 
-.dash-info-detail h2 > span {
+.dash-info-detail h2>span {
   font-size: 14px;
 }
 
@@ -2486,7 +2486,7 @@ table.styled-table {
   cursor: pointer;
 }
 
-.facturacion-container > div {
+.facturacion-container>div {
   border: 1px solid black;
   border-radius: 5px;
   width: 100%;
@@ -3172,7 +3172,7 @@ table.styled-table {
   color: #7c0505;
 }
 
-.details-collapsible[open] > .details-summary::before {
+.details-collapsible[open]>.details-summary::before {
   transform: rotate(90deg);
 }
 
@@ -3238,7 +3238,7 @@ table.styled-table {
   transition: transform 0.2s;
 }
 
-.details-collapsible[open] > .details-summary::before {
+.details-collapsible[open]>.details-summary::before {
   transform: rotate(90deg);
 }
 
@@ -4186,7 +4186,7 @@ h3.white {
   padding: 1rem;
 }
 
-.home-link > span {
+.home-link>span {
   color: black;
   font-weight: bold;
 }
@@ -4774,6 +4774,7 @@ h3.white {
 }
 
 @media (max-width: 768px) {
+
   .order-list-table th,
   .order-list-table td {
     padding: 1rem;
@@ -5310,7 +5311,8 @@ button.modal-close-button {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
-  flex-wrap: wrap; /* Para mejor responsiveness en pantallas pequeñas */
+  flex-wrap: wrap;
+  /* Para mejor responsiveness en pantallas pequeñas */
   gap: 1rem;
 }
 
@@ -5322,13 +5324,16 @@ button.modal-close-button {
 
 .search-input-container .search-input-icon {
   position: absolute;
-  right: 10px; /* <-- CAMBIO: Posicionado a la derecha */
+  right: 10px;
+  /* <-- CAMBIO: Posicionado a la derecha */
   color: #888;
-  pointer-events: none; /* Evita que el icono bloquee el clic en el input */
+  pointer-events: none;
+  /* Evita que el icono bloquee el clic en el input */
 }
 
 .search-input-container input {
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem; /* <-- CAMBIO: Padding derecho para el icono */
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  /* <-- CAMBIO: Padding derecho para el icono */
   border: 1px solid #ccc;
   border-radius: 5px;
   width: 250px;
@@ -5387,4 +5392,3 @@ button.modal-close-button {
 .clear-filters-btn:hover {
   background-color: #5a6268;
 }
-

@@ -52,385 +52,200 @@ orderRouter.get(
   })
 );
 
+
+
+
+
+orderRouter.get(
+  "/groupedbyday",
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const dailyOrders = await Order.aggregate([
+      // 1. Agrupar por día para obtener los totales y una lista de todos los items
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
+          totalOrders: { $sum: 1 },
+          totalSales: { $sum: "$totalVenta" },
+          totalSubtotal: { $sum: "$subtotal" },
+          // Aplanar todos los orderItems de todas las órdenes del día en un solo array
+          allItems: { $push: "$orderItems" },
+        },
+      },
+      // 2. Desenrollar la lista de arrays de items
+      {
+        $unwind: {
+          path: "$allItems",
+          preserveNullAndEmptyArrays: true, // ¡IMPORTANTE! Mantiene los días aunque no tengan items
+        },
+      },
+      // 3. Desenrollar los items individuales
+      {
+        $unwind: {
+          path: "$allItems",
+          preserveNullAndEmptyArrays: true, // Mantiene los días aunque no tengan items
+        },
+      },
+      // 4. Agrupar por día y por item para sumar cantidades
+      {
+        $group: {
+          _id: {
+            day: "$_id",
+            codigo: "$allItems.codigo",
+            talla: "$allItems.talla",
+          },
+          // Mantener los totales del día
+          totalOrders: { $first: "$totalOrders" },
+          totalSales: { $first: "$totalSales" },
+          totalSubtotal: { $first: "$totalSubtotal" },
+          // Datos del item agrupado
+          nombre: { $first: "$allItems.nombre" },
+          precio: { $first: "$allItems.precio" },
+          imageurl: { $first: "$allItems.imageurl" },
+          qtySold: { $sum: "$allItems.qty" },
+          itemTotalSales: { $sum: { $multiply: ["$allItems.precio", "$allItems.qty"] } },
+        },
+      },
+      // 5. Agrupar una última vez por día para construir el array de itemsSold
+      {
+        $group: {
+          _id: "$_id.day",
+          totalOrders: { $first: "$totalOrders" },
+          totalSales: { $first: "$totalSales" },
+          totalSubtotal: { $first: "$totalSubtotal" },
+          itemsSold: {
+            // Solo agregar al array si el item tiene un código (evita nulos)
+            $push: {
+              $cond: ["$_id.codigo", {
+                codigo: "$_id.codigo",
+                nombre: "$nombre",
+                talla: "$_id.talla",
+                qty: "$qtySold",
+                precioUnitario: "$precio",
+                totalVentaItem: "$itemTotalSales",
+                imageurl: "$imageurl",
+              }, "$$REMOVE"]
+            },
+          },
+        },
+      },
+      { $sort: { _id: -1 } },
+    ]);
+
+    res.send(dailyOrders);
+  })
+);
+
 orderRouter.get(
   "/cuadrediario",
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    const fecha1 = req.query.fecha;
-    const dia = Number(fecha1.substr(8, 2));
-    const mes = Number(fecha1.substr(5, 2));
-    const ano = Number(fecha1.substr(0, 4));
+    // Validar que se reciba una fecha
+    if (!req.query.fecha) {
+      return res.status(400).send({ message: "La fecha es requerida." });
+    }
 
-    const count = await Order.countDocuments({});
+    // Crear objetos de fecha para el inicio y fin del día.
+    // Esto es más eficiente y preciso que extraer día/mes/año.
+    // IMPORTANTE: Se añade 'T00:00:00' para que new Date() interprete la fecha
+    // en la zona horaria local del servidor, no en UTC. Esto soluciona el problema
+    // de que la búsqueda se desfase un día.
+    const fechaString = req.query.fecha;
+    const fechaInicio = new Date(`${fechaString}T00:00:00`);
+    fechaInicio.setHours(0, 0, 0, 0);
 
-    const orders = await Order.aggregate([
+    const fechaFin = new Date(`${fechaString}T00:00:00`);
+    fechaFin.setHours(23, 59, 59, 999);
+
+    const results = await Order.aggregate([
       {
-        $project: {
-          _id: 1,
-          user: 1,
-          fecha: 1,
-          orderItems: 1,
-          subtotal: 1,
-          totalVenta: 1,
-          subtotal: 1,
-          observaciones: 1,
-          totalItems: 1,
-          cambioDia: 1,
-          pago: 1,
-          memo: 1,
-          delivery: 1,
-          descuento: 1,
-          cambioDia: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-        },
-      },
-      {
+        // 1. Filtrar todas las órdenes del día especificado.
         $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-    ]).sort({ fecha: 1 });
-
-    const cash = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
+          fecha: {
+            $gte: fechaInicio,
+            $lt: fechaFin,
+          },
         },
       },
       {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalCashusd: { $sum: "$pago.efectivousd" },
-          totalCashbs: { $sum: "$pago.efectivobs" },
-          totalCasheuros: { $sum: "$pago.efectivoeuros" },
-          totalpagomobil: { $sum: "$pago.pagomovil.montopagomovil" },
-          totalzelle: { $sum: "$pago.zelle.montozelle" },
-          totalcashea: { $sum: "$pago.cashea.monto" },
+        // 2. Usar $facet para ejecutar dos pipelines en paralelo:
+        // una para obtener el detalle de las órdenes y otra para el resumen de pagos.
+        $facet: {
+          // Pipeline para obtener la lista de órdenes del día
+          orders: [
+            {
+              $project: {
+                _id: 1,
+                fecha: 1,
+                orderItems: 1,
+                subtotal: 1,
+                totalVenta: 1,
+                totalItems: 1,
+                cambioDia: 1,
+                pago: 1,
+                memo: 1,
+                delivery: 1,
+                descuento: 1,
+                "clienteInfo.nombre": 1,
+              },
+            },
+            { $sort: { fecha: 1 } },
+          ],
+          // Pipeline para calcular el resumen de pagos
+          paymentSummary: [
+            // Desglosar el array de pagos para procesar cada pago individualmente
+            { $unwind: "$pago" },
+            {
+              // Agrupar todos los pagos y sumar condicionalmente
+              $group: {
+                _id: null, // Agrupamos todos los documentos en uno solo
+                totalDolares: { $sum: { $cond: [{ $eq: ["$pago.tipo", "DOLARES"] }, "$pago.monto", 0] } },
+                totalEuros: { $sum: { $cond: [{ $eq: ["$pago.tipo", "EUROS"] }, "$pago.monto", 0] } },
+                totalZelle: { $sum: { $cond: [{ $eq: ["$pago.tipo", "ZELLE"] }, "$pago.monto", 0] } },
+                totalCashea: { $sum: { $cond: [{ $eq: ["$pago.tipo", "PAGOCASHEA"] }, "$pago.monto", 0] } },
+                totalPagoMovil: { $sum: { $cond: [{ $eq: ["$pago.tipo", "PAGOMOVIL"] }, "$pago.monto", 0] } },
+                totalBolivares: { $sum: { $cond: [{ $eq: ["$pago.tipo", "BOLIVARES"] }, "$pago.monto", 0] } },
+                totalPuntoPlaza: {
+                  $sum: {
+                    $cond: [{ $and: [{ $in: ["$pago.tipo", ["TDC", "TDB"]] }, { $eq: ["$pago.bancoDestino", "Plaza"] }] }, "$pago.monto", 0],
+                  },
+                },
+                totalPuntoVenezuela: {
+                  $sum: {
+                    $cond: [
+                      { $and: [{ $in: ["$pago.tipo", ["TDC", "TDB"]] }, { $eq: ["$pago.bancoDestino", "Venezuela"] }] },
+                      "$pago.monto",
+                      0,
+                    ],
+                  },
+                },
+                totalPuntoBanesco: {
+                  $sum: {
+                    $cond: [
+                      { $and: [{ $in: ["$pago.tipo", ["TDC", "TDB"]] }, { $eq: ["$pago.bancoDestino", "Banesco"] }] },
+                      "$pago.monto",
+                      0,
+                    ],
+                  },
+                },
+                totalTransferencia: { $sum: { $cond: [{ $eq: ["$pago.tipo", "TRANSFERENCIA"] }, "$pago.monto", 0] } },
+              },
+            },
+            {
+              // Limpiar el _id del resultado
+              $project: { _id: 0 },
+            },
+          ],
         },
       },
     ]);
 
-    const puntoPlz = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Plaza" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntoplaza: { $sum: "$pago.punto.montopunto" },
-        },
-      },
-    ]);
+    // Extraer los resultados de $facet
+    const orders = results[0].orders;
+    // Si no hay pagos, paymentSummary será un array vacío. Devolvemos un objeto con ceros.
+    const paymentSummary = results[0].paymentSummary[0] || {};
 
-    const puntoPlz2 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto2",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Plaza" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntoplaza: { $sum: "$pago.punto.montopunto2" },
-        },
-      },
-    ]);
-
-    const puntoPlz3 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto3",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Plaza" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntoplaza: { $sum: "$pago.punto.montopunto3" },
-        },
-      },
-    ]);
-
-    const puntoVzl = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Venezuela" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntovzla: { $sum: "$pago.punto.montopunto" },
-        },
-      },
-    ]);
-
-    const puntoVzl2 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto2",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Venezuela" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntovzla: { $sum: "$pago.punto.montopunto2" },
-        },
-      },
-    ]);
-
-    const puntoVzl3 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto3",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Venezuela" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntovzla: { $sum: "$pago.punto.montopunto3" },
-        },
-      },
-    ]);
-
-    const puntobanes = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Banesco" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntobanes: { $sum: "$pago.punto.montopunto" },
-        },
-      },
-    ]);
-
-    const puntobanes2 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto2",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Banesco" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntobanes: { $sum: "$pago.punto.montopunto2" },
-        },
-      },
-    ]);
-
-    const puntobanes3 = await Order.aggregate([
-      {
-        $project: {
-          fecha: 1,
-          pago: 1,
-          createdAt: 1,
-          day: { $dayOfMonth: "$fecha" },
-          month: { $month: "$fecha" },
-          year: { $year: "$fecha" },
-          fecha: { $dateToString: { format: "%Y-%m-%d", date: "$fecha" } },
-          banco: "$pago.punto.bancodestinopunto3",
-        },
-      },
-      {
-        $match: {
-          day: { $eq: dia },
-          month: { $eq: mes },
-          year: { $eq: ano },
-        },
-      },
-      {
-        $match: {
-          banco: { $eq: "Banesco" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalpuntobanes: { $sum: "$pago.punto.montopunto3" },
-        },
-      },
-    ]);
-
-    const puntoPlaza = [...puntoPlz, ...puntoPlz2, ...puntoPlz3];
-    const puntoVenezuela = [...puntoVzl, ...puntoVzl2, ...puntoVzl3];
-    const puntoBanesco = [...puntobanes, ...puntobanes2, ...puntobanes3];
-
-    res.send({ orders, cash, puntoPlaza, puntoVenezuela, puntoBanesco });
+    res.send({ orders, paymentSummary });
   })
 );
 

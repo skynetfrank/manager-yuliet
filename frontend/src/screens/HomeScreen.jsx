@@ -7,6 +7,7 @@ import {
   LucideBaggageClaim,
   LucideBoxes,
   LucideCalculator,
+  LucideCalendarCheck,
   LucideCalendar,
   LucideChartNetwork,
   LucideClipboardCheck,
@@ -30,6 +31,7 @@ const salesSection = [
   { to: "/facturacion", icon: <LucideBaggageClaim />, label: "Venta Detal", isPrimary: true },
   { to: "/verpedidos", icon: <LucideListTodo />, label: "Lista de Ventas" },
   { to: "/verproductos", icon: <LucideBoxes />, label: "Catalogo" },
+  { to: "/ventasdiarias", icon: <LucideCalendarCheck />, label: "Ventas Diarias" },
   { to: "/enconstruccion", icon: <LucideLayoutDashboard />, label: "Dashboard" },
 ];
 
